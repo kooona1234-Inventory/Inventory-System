@@ -66,7 +66,8 @@ function noteDeviceActivity(iso) {
 }
 
 function formatRssi(rssi) {
-  return rssi == null ? "—" : String(rssi);
+  if (rssi == null) return "—";
+  return String(Math.abs(Number(rssi)));
 }
 
 function formatTime(iso) {
