@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>اختيار صوت الإنذار</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #13201c;
+      --muted: #5c7269;
+      --line: rgba(19, 32, 28, 0.12);
+      --accent: #0f7a5f;
+      --panel: rgba(255, 255, 255, 0.8);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "IBM Plex Sans Arabic", Tahoma, sans-serif;
+      color: var(--ink);
+      min-height: 100vh;
+      padding: 28px 16px 48px;
+      background:
+        radial-gradient(800px 360px at 90% -10%, rgba(15, 122, 95, 0.16), transparent 60%),
+        linear-gradient(180deg, #f7fbf8, #e8f1ec);
+    }
+    .wrap { max-width: 720px; margin: 0 auto; }
+    h1 { font-size: 1.8rem; margin-bottom: 8px; }
+    .sub { color: var(--muted); margin-bottom: 22px; line-height: 1.6; }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px 18px;
+      margin-bottom: 12px;
+      backdrop-filter: blur(10px);
+    }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .title { font-weight: 700; font-size: 1.05rem; }
+    .desc { color: var(--muted); font-size: 0.92rem; margin-top: 4px; }
+    button {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      font-weight: 700;
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      min-width: 110px;
+    }
+    button.playing {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .pick {
+      margin-top: 18px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: rgba(15, 122, 95, 0.08);
+      border: 1px solid rgba(15, 122, 95, 0.2);
+      color: var(--muted);
+    }
+    .pick strong { color: var(--ink); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>اختيار صوت الإنذار</h1>
+    <p class="sub">اسمع الخيارات، ثم قل لي رقم الصوت الذي تريده (1 أو 2 أو 3 أو 4) لأثبّته في المنصة.</p>
+
+    <div class="card">
+      <div class="row">
+        <div>
+          <p class="title">1 — Whoop</p>
+          <p class="desc">صفارة أمنية تصعد وتهبط</p>
+        </div>
+        <button type="button" data-src="sounds/1-whoop.wav">▶ تشغيل</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <div>
+          <p class="title">2 — Two Tone</p>
+          <p class="desc">نغمتان متناوبتان كلاسيكية</p>
+        </div>
+        <button type="button" data-src="sounds/2-twotone.wav">▶ تشغيل</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <div>
+          <p class="title">3 — Digital</p>
+          <p class="desc">نبضات رقمية سريعة ونظيفة</p>
+        </div>
+        <button type="button" data-src="sounds/3-digital.wav">▶ تشغيل</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <div>
+          <p class="title">4 — Buzzer</p>
+          <p class="desc">جرس تنبيه متقطع</p>
+        </div>
+        <button type="button" data-src="sounds/4-buzzer.wav">▶ تشغيل</button>
+      </div>
+    </div>
+
+    <p class="pick">بعد السماع اكتب هنا مثلًا: <strong>الصوت 2</strong></p>
+  </div>
+
+  <script>
+    let current = null;
+    let currentBtn = null;
+
+    function stopCurrent() {
+      if (current) {
+        current.pause();
+        current.currentTime = 0;
+      }
+      if (currentBtn) {
+        currentBtn.classList.remove("playing");
+        currentBtn.textContent = "▶ تشغيل";
+      }
+      current = null;
+      currentBtn = null;
+    }
+
+    document.addEventListener("click", async (e) => {
+      const btn = e.target.closest("button[data-src]");
+      if (!btn) return;
+
+      if (currentBtn === btn && current && !current.paused) {
+        stopCurrent();
+        return;
+      }
+
+      stopCurrent();
+      currentBtn = btn;
+      current = new Audio(btn.dataset.src);
+      current.loop = true;
+      btn.classList.add("playing");
+      btn.textContent = "■ إيقاف";
+      try {
+        await current.play();
+      } catch (err) {
+        stopCurrent();
+        alert("تعذر التشغيل: " + err.message);
+      }
+    });
+  </script>
+</body>
+</html>
