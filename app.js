@@ -2,6 +2,8 @@ const SUPABASE_URL = "https://hmfvwasyndocjivyoycd.supabase.co";
 const SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhtZnZ3YXN5bmRvY2ppdnlveWNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2MTAwNzksImV4cCI6MjEwMTE4NjA3OX0.pOSt9KhadNir22ti5ID3vzaxy_RZCUxy5YXGUm_EUeM";
 
+const DEVICE_ACTIVE_MS = 45000;
+
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const els = {
@@ -27,26 +29,57 @@ let reads = [];
 /** @type {Record<string, string>} */
 let nameByEpc = {};
 let editingEpc = null;
+let lastDeviceSeenAt = null;
+let realtimeReady = false;
 
 function setLive(state, text) {
-  els.liveStatus.classList.remove("online", "error");
+  els.liveStatus.classList.remove("online", "error", "idle");
   if (state) els.liveStatus.classList.add(state);
   els.liveText.textContent = text;
 }
 
-function rssiClass(rssi) {
-  if (rssi == null) return "mid";
-  if (rssi > -50) return "good";
-  if (rssi > -65) return "mid";
-  return "weak";
+function refreshDeviceStatus() {
+  if (!realtimeReady && !lastDeviceSeenAt) {
+    setLive(null, "جارٍ الاتصال...");
+    return;
+  }
+
+  const active =
+    lastDeviceSeenAt != null &&
+    Date.now() - lastDeviceSeenAt.getTime() <= DEVICE_ACTIVE_MS;
+
+  if (active) {
+    setLive("online", "الجهاز متصل");
+  } else {
+    setLive("idle", "الجهاز غير متصل");
+  }
+}
+
+function noteDeviceActivity(iso) {
+  if (!iso) return;
+  const at = new Date(iso);
+  if (Number.isNaN(at.getTime())) return;
+  if (!lastDeviceSeenAt || at > lastDeviceSeenAt) {
+    lastDeviceSeenAt = at;
+  }
+  refreshDeviceStatus();
+}
+
+function formatRssi(rssi) {
+  return rssi == null ? "—" : String(rssi);
 }
 
 function formatTime(iso) {
   if (!iso) return "—";
   try {
-    return new Intl.DateTimeFormat("ar-SA", {
-      dateStyle: "medium",
-      timeStyle: "medium",
+    return new Intl.DateTimeFormat("en-GB", {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
     }).format(new Date(iso));
   } catch {
     return iso;
@@ -75,12 +108,14 @@ function updateStats() {
     els.lastRssi.textContent = "—";
     els.latestEpc.textContent = "بانتظار أول قراءة...";
     els.latestMeta.textContent = "";
+    refreshDeviceStatus();
     return;
   }
 
-  els.lastRssi.textContent = `${latest.rssi ?? "—"} dBm`;
+  els.lastRssi.textContent = formatRssi(latest.rssi);
   els.latestEpc.textContent = `${displayName(latest.epc)} · ${latest.epc}`;
-  els.latestMeta.textContent = `${latest.device_id || "جهاز غير معروف"} · ${formatTime(latest.created_at)}`;
+  els.latestMeta.textContent = formatTime(latest.created_at);
+  noteDeviceActivity(latest.created_at);
 }
 
 function uniqueTagRows() {
@@ -102,12 +137,11 @@ function renderTags() {
   els.tagsBody.innerHTML = rows
     .map((row) => {
       const name = displayName(row.epc);
-      const rssi = row.rssi == null ? "—" : `${row.rssi} dBm`;
       return `
         <tr data-epc="${escapeHtml(row.epc)}">
           <td><strong>${escapeHtml(name)}</strong></td>
           <td class="epc-cell">${escapeHtml(row.epc)}</td>
-          <td class="rssi ${rssiClass(row.rssi)}">${rssi}</td>
+          <td class="rssi-green mono">${escapeHtml(formatRssi(row.rssi))}</td>
           <td>
             <button type="button" class="ghost-btn small-btn" data-action="rename" data-epc="${escapeHtml(row.epc)}">تعديل الاسم</button>
           </td>
@@ -120,7 +154,7 @@ function renderTags() {
 function renderTable(highlightId) {
   if (!reads.length) {
     els.readsBody.innerHTML =
-      '<tr class="empty-row"><td colspan="6">لا توجد قراءات بعد</td></tr>';
+      '<tr class="empty-row"><td colspan="5">لا توجد قراءات بعد</td></tr>';
     renderTags();
     updateStats();
     return;
@@ -129,14 +163,12 @@ function renderTable(highlightId) {
   els.readsBody.innerHTML = reads
     .map((row) => {
       const cls = row.id === highlightId ? "new-row" : "";
-      const rssi = row.rssi == null ? "—" : `${row.rssi} dBm`;
       return `
         <tr class="${cls}" data-id="${row.id}">
           <td>${escapeHtml(displayName(row.epc))}</td>
           <td class="epc-cell">${escapeHtml(row.epc)}</td>
-          <td class="rssi ${rssiClass(row.rssi)}">${rssi}</td>
-          <td>${escapeHtml(row.device_id || "—")}</td>
-          <td>${formatTime(row.created_at)}</td>
+          <td class="rssi-green mono">${escapeHtml(formatRssi(row.rssi))}</td>
+          <td class="time-en">${formatTime(row.created_at)}</td>
           <td>
             <div class="row-actions">
               <button type="button" class="ghost-btn small-btn" data-action="rename" data-epc="${escapeHtml(row.epc)}">تعديل</button>
@@ -164,6 +196,7 @@ function upsertRead(row, { prepend = false, highlight = false } = {}) {
 
   reads.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   if (reads.length > 200) reads = reads.slice(0, 200);
+  noteDeviceActivity(row.created_at);
   renderTable(highlight ? row.id : null);
 }
 
@@ -197,8 +230,9 @@ async function loadReads() {
   }
 
   reads = data || [];
+  if (reads[0]?.created_at) noteDeviceActivity(reads[0].created_at);
   renderTable();
-  setLive("online", "متصل مباشرة");
+  refreshDeviceStatus();
 }
 
 async function refreshAll() {
@@ -263,7 +297,9 @@ async function clearAllReads() {
   }
 
   reads = [];
+  lastDeviceSeenAt = null;
   renderTable();
+  refreshDeviceStatus();
 }
 
 function subscribeRealtime() {
@@ -274,7 +310,6 @@ function subscribeRealtime() {
       { event: "INSERT", schema: "public", table: "tag_reads" },
       (payload) => {
         upsertRead(payload.new, { prepend: true, highlight: true });
-        setLive("online", "متصل مباشرة");
       }
     )
     .on(
@@ -302,9 +337,16 @@ function subscribeRealtime() {
       }
     )
     .subscribe((status) => {
-      if (status === "SUBSCRIBED") setLive("online", "متصل مباشرة");
-      else if (status === "CHANNEL_ERROR") setLive("error", "خطأ في القناة المباشرة");
-      else if (status === "TIMED_OUT") setLive("error", "انتهت مهلة الاتصال");
+      if (status === "SUBSCRIBED") {
+        realtimeReady = true;
+        refreshDeviceStatus();
+      } else if (status === "CHANNEL_ERROR") {
+        realtimeReady = false;
+        setLive("error", "خطأ في القناة المباشرة");
+      } else if (status === "TIMED_OUT") {
+        realtimeReady = false;
+        setLive("error", "انتهت مهلة الاتصال");
+      }
     });
 }
 
@@ -341,6 +383,8 @@ document.addEventListener("click", (event) => {
     if (confirm("حذف هذه القراءة من القاعدة؟")) deleteOneRead(id);
   }
 });
+
+setInterval(refreshDeviceStatus, 5000);
 
 refreshAll();
 subscribeRealtime();

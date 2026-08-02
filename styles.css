@@ -118,9 +118,27 @@ body {
   background: rgba(216, 243, 234, 0.7);
 }
 
+.live.idle {
+  color: var(--warn);
+  border-color: rgba(180, 83, 9, 0.25);
+  background: rgba(255, 237, 213, 0.7);
+}
+
 .live.error {
   color: var(--danger);
   border-color: rgba(180, 35, 24, 0.2);
+}
+
+.rssi-green {
+  color: var(--ok) !important;
+  font-weight: 700;
+}
+
+.time-en {
+  font-family: var(--mono);
+  direction: ltr;
+  unicode-bidi: plaintext;
+  white-space: nowrap;
 }
 
 .live-dot {

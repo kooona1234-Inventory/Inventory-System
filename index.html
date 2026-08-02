@@ -18,7 +18,6 @@
       <span class="brand-mark" aria-hidden="true"></span>
       <div>
         <p class="brand-name">Inventory System</p>
-        <p class="brand-sub">مراقبة قراءات RFID المباشرة</p>
       </div>
     </div>
     <div class="live" id="liveStatus">
@@ -30,7 +29,6 @@
   <main>
     <section class="hero">
       <h1>المخزون الحي</h1>
-      <p class="lede">سمِّ كل تاق، واحذف القراءات من القاعدة مباشرة من اللوحة.</p>
     </section>
 
     <section class="metrics" aria-label="إحصائيات">
@@ -44,7 +42,7 @@
       </div>
       <div class="metric">
         <p class="metric-label">آخر قوة إشارة</p>
-        <p class="metric-value mono" id="lastRssi">—</p>
+        <p class="metric-value mono rssi-green" id="lastRssi">—</p>
       </div>
     </section>
 
@@ -64,7 +62,7 @@
             <tr>
               <th>الاسم</th>
               <th>EPC</th>
-              <th>آخر RSSI</th>
+              <th>القوة</th>
               <th>إجراء</th>
             </tr>
           </thead>
@@ -91,25 +89,20 @@
             <tr>
               <th>الاسم</th>
               <th>EPC</th>
-              <th>RSSI</th>
-              <th>الجهاز</th>
+              <th>القوة</th>
               <th>الوقت</th>
               <th></th>
             </tr>
           </thead>
           <tbody id="readsBody">
             <tr class="empty-row">
-              <td colspan="6">لا توجد قراءات بعد</td>
+              <td colspan="5">لا توجد قراءات بعد</td>
             </tr>
           </tbody>
         </table>
       </div>
     </section>
   </main>
-
-  <footer>
-    <span>مرتبط بـ Supabase · GitHub Pages</span>
-  </footer>
 
   <dialog id="nameDialog" class="dialog">
     <form method="dialog" id="nameForm">
