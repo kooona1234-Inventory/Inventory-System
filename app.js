@@ -54,7 +54,7 @@ function ensureAudio() {
   }
 
   if (!alarmAudio) {
-    alarmAudio = new Audio("alarm.wav?v=7");
+    alarmAudio = new Audio("alarm.wav?v=8");
     alarmAudio.loop = true;
     alarmAudio.preload = "auto";
     alarmAudio.volume = 0.9;
@@ -194,7 +194,7 @@ function updateStats() {
   }
 
   els.lastRssi.textContent = formatRssi(latest.rssi);
-  const stolenMark = isStolen(latest.epc) ? " · مسروق" : "";
+  const stolenMark = isStolen(latest.epc) ? " · إنذار سرقة مفعّل" : "";
   els.latestEpc.textContent = `${displayName(latest.epc)} · ${latest.epc}${stolenMark}`;
   els.latestMeta.textContent = formatTime(latest.created_at);
   noteDeviceActivity(latest.created_at);
@@ -221,10 +221,10 @@ function renderTags() {
       const name = displayName(row.epc);
       const stolen = isStolen(row.epc);
       const rowClass = stolen ? "stolen-row" : "";
-      const badge = stolen ? '<span class="stolen-badge">مسروق</span>' : "";
+      const badge = stolen ? '<span class="stolen-badge">إنذار سرقة</span>' : "";
       const stolenBtn = stolen
-        ? `<button type="button" class="ghost-btn small-btn" data-action="unmark-stolen" data-epc="${escapeHtml(row.epc)}">إلغاء المسروق</button>`
-        : `<button type="button" class="danger-btn small-btn" data-action="mark-stolen" data-epc="${escapeHtml(row.epc)}">تعيين مسروق</button>`;
+        ? `<button type="button" class="ghost-btn small-btn" data-action="unmark-stolen" data-epc="${escapeHtml(row.epc)}">إيقاف إنذار السرقة</button>`
+        : `<button type="button" class="danger-btn small-btn" data-action="mark-stolen" data-epc="${escapeHtml(row.epc)}">تفعيل إنذار السرقة</button>`;
 
       return `
         <tr class="${rowClass}" data-epc="${escapeHtml(row.epc)}">
@@ -261,7 +261,7 @@ function renderTable(highlightId) {
       ]
         .filter(Boolean)
         .join(" ");
-      const badge = stolen ? '<span class="stolen-badge">مسروق</span>' : "";
+      const badge = stolen ? '<span class="stolen-badge">إنذار سرقة</span>' : "";
 
       return `
         <tr class="${cls}" data-id="${row.id}">
@@ -518,7 +518,7 @@ document.addEventListener("click", (event) => {
     if (!Number.isFinite(id)) return;
     if (confirm("حذف هذه القراءة من القاعدة؟")) deleteOneRead(id);
   } else if (action === "mark-stolen") {
-    if (confirm("تعيين هذا التاق كمسروق؟ سيظهر إنذار عند قراءته.")) {
+    if (confirm("تفعيل إنذار السرقة لهذا التاق؟ سيشتغل الإنذار عند قراءته.")) {
       setStolenStatus(btn.dataset.epc, true);
     }
   } else if (action === "unmark-stolen") {
