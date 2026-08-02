@@ -221,6 +221,7 @@ main {
 
 .feed {
   padding: 8px 8px 12px;
+  margin-bottom: 18px;
   animation: rise 0.9s ease both 0.2s;
 }
 
@@ -230,6 +231,7 @@ main {
   justify-content: space-between;
   gap: 12px;
   padding: 14px 16px 8px;
+  flex-wrap: wrap;
 }
 
 .feed-head h2 {
@@ -237,7 +239,17 @@ main {
   font-weight: 700;
 }
 
-.ghost-btn {
+.feed-actions,
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ghost-btn,
+.danger-btn,
+.primary-btn {
   border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.65);
   color: var(--ink);
@@ -253,6 +265,82 @@ main {
 .ghost-btn:hover {
   background: #fff;
   border-color: rgba(15, 122, 95, 0.35);
+}
+
+.danger-btn {
+  background: rgba(180, 35, 24, 0.08);
+  border-color: rgba(180, 35, 24, 0.28);
+  color: var(--danger);
+}
+
+.danger-btn:hover {
+  background: rgba(180, 35, 24, 0.14);
+}
+
+.primary-btn {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.primary-btn:hover {
+  filter: brightness(1.05);
+}
+
+.small-btn {
+  padding: 6px 10px;
+  font-size: 0.78rem;
+}
+
+.dialog {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 0;
+  width: min(420px, calc(100% - 32px));
+  background: #f7fbf8;
+  color: var(--ink);
+  box-shadow: var(--shadow);
+}
+
+.dialog::backdrop {
+  background: rgba(19, 32, 28, 0.35);
+  backdrop-filter: blur(4px);
+}
+
+.dialog form {
+  display: grid;
+  gap: 10px;
+  padding: 22px;
+}
+
+.dialog h3 {
+  font-size: 1.15rem;
+}
+
+.dialog-epc {
+  font-size: 0.82rem;
+  color: var(--muted);
+  word-break: break-all;
+}
+
+.dialog label {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.dialog input {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-family: inherit;
+  font-size: 1rem;
+  background: #fff;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
 }
 
 .table-wrap {
