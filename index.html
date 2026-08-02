@@ -30,7 +30,7 @@
   <main>
     <section class="hero">
       <h1>المخزون الحي</h1>
-      <p class="lede">التاقات تصل من الجهاز إلى القاعدة فورًا، وهذه اللوحة تتحدث بدون تحديث الصفحة.</p>
+      <p class="lede">سمِّ كل تاق، واحذف القراءات من القاعدة مباشرة من اللوحة.</p>
     </section>
 
     <section class="metrics" aria-label="إحصائيات">
@@ -54,24 +54,52 @@
       <p class="latest-meta" id="latestMeta"></p>
     </section>
 
-    <section class="feed" aria-label="سجل القراءات">
+    <section class="feed" aria-label="التاقات المسماة">
       <div class="feed-head">
-        <h2>سجل القراءات</h2>
-        <button type="button" class="ghost-btn" id="refreshBtn">تحديث يدوي</button>
+        <h2>التاقات والأسماء</h2>
       </div>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
+              <th>الاسم</th>
+              <th>EPC</th>
+              <th>آخر RSSI</th>
+              <th>إجراء</th>
+            </tr>
+          </thead>
+          <tbody id="tagsBody">
+            <tr class="empty-row">
+              <td colspan="4">لا توجد تاقات بعد</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="feed" aria-label="سجل القراءات">
+      <div class="feed-head">
+        <h2>سجل القراءات</h2>
+        <div class="feed-actions">
+          <button type="button" class="ghost-btn" id="refreshBtn">تحديث يدوي</button>
+          <button type="button" class="danger-btn" id="clearAllBtn">حذف كل القراءات</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>الاسم</th>
               <th>EPC</th>
               <th>RSSI</th>
               <th>الجهاز</th>
               <th>الوقت</th>
+              <th></th>
             </tr>
           </thead>
           <tbody id="readsBody">
             <tr class="empty-row">
-              <td colspan="4">لا توجد قراءات بعد</td>
+              <td colspan="6">لا توجد قراءات بعد</td>
             </tr>
           </tbody>
         </table>
@@ -82,6 +110,19 @@
   <footer>
     <span>مرتبط بـ Supabase · GitHub Pages</span>
   </footer>
+
+  <dialog id="nameDialog" class="dialog">
+    <form method="dialog" id="nameForm">
+      <h3>تسمية التاق</h3>
+      <p class="dialog-epc mono" id="dialogEpc"></p>
+      <label for="nameInput">الاسم (مثال: عطر شعر)</label>
+      <input id="nameInput" type="text" maxlength="80" placeholder="عطر عود / جهاز / ..." required />
+      <div class="dialog-actions">
+        <button type="submit" class="primary-btn" value="save">حفظ</button>
+        <button type="button" class="ghost-btn" id="cancelNameBtn">إلغاء</button>
+      </div>
+    </form>
+  </dialog>
 
   <script src="app.js"></script>
 </body>
