@@ -23,7 +23,7 @@
         radial-gradient(800px 360px at 90% -10%, rgba(15, 122, 95, 0.16), transparent 60%),
         linear-gradient(180deg, #f7fbf8, #e8f1ec);
     }
-    .wrap { max-width: 720px; margin: 0 auto; }
+    .wrap { max-width: 760px; margin: 0 auto; }
     h1 { font-size: 1.8rem; margin-bottom: 8px; }
     .sub { color: var(--muted); margin-bottom: 22px; line-height: 1.6; }
     .card {
@@ -31,7 +31,7 @@
       border: 1px solid var(--line);
       border-radius: 16px;
       padding: 16px 18px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       backdrop-filter: blur(10px);
     }
     .row {
@@ -41,8 +41,8 @@
       gap: 12px;
       flex-wrap: wrap;
     }
-    .title { font-weight: 700; font-size: 1.05rem; }
-    .desc { color: var(--muted); font-size: 0.92rem; margin-top: 4px; }
+    .title { font-weight: 700; font-size: 1.02rem; }
+    .desc { color: var(--muted); font-size: 0.9rem; margin-top: 4px; }
     button {
       border: 1px solid var(--line);
       background: #fff;
@@ -73,49 +73,20 @@
 <body>
   <div class="wrap">
     <h1>اختيار صوت الإنذار</h1>
-    <p class="sub">اسمع الخيارات، ثم قل لي رقم الصوت الذي تريده (1 أو 2 أو 3 أو 4) لأثبّته في المنصة.</p>
+    <p class="sub">اسمع الأصوات، ثم اكتب رقم الصوت الذي تريده (مثل: الصوت 7).</p>
 
-    <div class="card">
-      <div class="row">
-        <div>
-          <p class="title">1 — Whoop</p>
-          <p class="desc">صفارة أمنية تصعد وتهبط</p>
-        </div>
-        <button type="button" data-src="sounds/1-whoop.wav">▶ تشغيل</button>
-      </div>
-    </div>
+    <div class="card"><div class="row"><div><p class="title">1 — Whoop</p><p class="desc">صفارة أمنية تصعد وتهبط</p></div><button type="button" data-src="sounds/1-whoop.wav">▶ تشغيل</button></div></div>
+    <div class="card"><div class="row"><div><p class="title">2 — Two Tone</p><p class="desc">نغمتان متناوبتان كلاسيكية</p></div><button type="button" data-src="sounds/2-twotone.wav">▶ تشغيل</button></div></div>
+    <div class="card"><div class="row"><div><p class="title">3 — Digital</p><p class="desc">نبضات رقمية سريعة</p></div><button type="button" data-src="sounds/3-digital.wav">▶ تشغيل</button></div></div>
+    <div class="card"><div class="row"><div><p class="title">4 — Buzzer</p><p class="desc">جرس تنبيه متقطع</p></div><button type="button" data-src="sounds/4-buzzer.wav">▶ تشغيل</button></div></div>
+    <div class="card"><div class="row"><div><p class="title">5 — Police</p><p class="desc">صفارة سريعة بأسلوب دورية</p></div><button type="button" data-src="sounds/5-police.wav">▶ تشغيل</button></div></div>
+    <div class="card"><div class="row"><div><p class="title">6 — Chime</p><p class="desc">نغمات تنبيه واضحة ومرتبة</p></div><button type="button" data-src="sounds/6-chime.wav">▶ تشغيل</button></div></div>
+    <div class="card"><div class="row"><div><p class="title">7 — Klaxon</p><p class="desc">صوت صناعي قوي وحاد</p></div><button type="button" data-src="sounds/7-klaxon.wav">▶ تشغيل</button></div></div>
+    <div class="card"><div class="row"><div><p class="title">8 — Heartbeat</p><p class="desc">نبضات متوترة ومتكررة</p></div><button type="button" data-src="sounds/8-heartbeat.wav">▶ تشغيل</button></div></div>
+    <div class="card"><div class="row"><div><p class="title">9 — Airhorn</p><p class="desc">نغمة مستمرة عالية الحضور</p></div><button type="button" data-src="sounds/9-airhorn.wav">▶ تشغيل</button></div></div>
+    <div class="card"><div class="row"><div><p class="title">10 — Space</p><p class="desc">إنذار حديث بطابع إلكتروني</p></div><button type="button" data-src="sounds/10-space.wav">▶ تشغيل</button></div></div>
 
-    <div class="card">
-      <div class="row">
-        <div>
-          <p class="title">2 — Two Tone</p>
-          <p class="desc">نغمتان متناوبتان كلاسيكية</p>
-        </div>
-        <button type="button" data-src="sounds/2-twotone.wav">▶ تشغيل</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="row">
-        <div>
-          <p class="title">3 — Digital</p>
-          <p class="desc">نبضات رقمية سريعة ونظيفة</p>
-        </div>
-        <button type="button" data-src="sounds/3-digital.wav">▶ تشغيل</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="row">
-        <div>
-          <p class="title">4 — Buzzer</p>
-          <p class="desc">جرس تنبيه متقطع</p>
-        </div>
-        <button type="button" data-src="sounds/4-buzzer.wav">▶ تشغيل</button>
-      </div>
-    </div>
-
-    <p class="pick">بعد السماع اكتب هنا مثلًا: <strong>الصوت 2</strong></p>
+    <p class="pick">بعد الاختيار اكتب هنا: <strong>الصوت 5</strong> مثلًا</p>
   </div>
 
   <script>
@@ -146,7 +117,7 @@
 
       stopCurrent();
       currentBtn = btn;
-      current = new Audio(btn.dataset.src);
+      current = new Audio(btn.dataset.src + "?v=8");
       current.loop = true;
       btn.classList.add("playing");
       btn.textContent = "■ إيقاف";
