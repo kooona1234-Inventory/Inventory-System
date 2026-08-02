@@ -141,6 +141,77 @@ body {
   white-space: nowrap;
 }
 
+.stolen-badge {
+  display: inline-block;
+  margin-inline-start: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(180, 35, 24, 0.12);
+  color: var(--danger);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+tbody tr.stolen-row {
+  background: rgba(180, 35, 24, 0.08);
+}
+
+tbody tr.stolen-row:hover {
+  background: rgba(180, 35, 24, 0.12);
+}
+
+.stolen-alert {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(120, 10, 10, 0.55);
+  animation: alertPulse 0.9s ease-in-out infinite alternate;
+}
+
+.stolen-alert[hidden] {
+  display: none !important;
+}
+
+.stolen-alert-inner {
+  width: min(460px, 100%);
+  background: #fff5f5;
+  border: 2px solid rgba(180, 35, 24, 0.45);
+  border-radius: 18px;
+  padding: 24px;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(80, 0, 0, 0.35);
+}
+
+.stolen-alert-title {
+  color: var(--danger);
+  font-size: 1.45rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.stolen-alert-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.stolen-alert-epc {
+  margin: 8px 0 16px;
+  color: var(--muted);
+  word-break: break-all;
+}
+
+body.alert-stolen .bg {
+  filter: saturate(1.2);
+}
+
+@keyframes alertPulse {
+  from { background: rgba(120, 10, 10, 0.45); }
+  to { background: rgba(160, 20, 20, 0.7); }
+}
+
 .live-dot {
   width: 8px;
   height: 8px;

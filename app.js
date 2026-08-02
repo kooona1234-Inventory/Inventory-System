@@ -3,6 +3,7 @@ const SUPABASE_ANON_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhtZnZ3YXN5bmRvY2ppdnlveWNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2MTAwNzksImV4cCI6MjEwMTE4NjA3OX0.pOSt9KhadNir22ti5ID3vzaxy_RZCUxy5YXGUm_EUeM";
 
 const DEVICE_ACTIVE_MS = 45000;
+const ALERT_COOLDOWN_MS = 8000;
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -23,14 +24,94 @@ const els = {
   nameInput: document.getElementById("nameInput"),
   dialogEpc: document.getElementById("dialogEpc"),
   cancelNameBtn: document.getElementById("cancelNameBtn"),
+  stolenAlert: document.getElementById("stolenAlert"),
+  stolenAlertName: document.getElementById("stolenAlertName"),
+  stolenAlertEpc: document.getElementById("stolenAlertEpc"),
+  dismissStolenBtn: document.getElementById("dismissStolenBtn"),
 };
 
 let reads = [];
 /** @type {Record<string, string>} */
 let nameByEpc = {};
+/** @type {Record<string, string>} */
+let statusByEpc = {};
 let editingEpc = null;
 let lastDeviceSeenAt = null;
 let realtimeReady = false;
+let audioCtx = null;
+let sirenTimer = null;
+let lastAlertAtByEpc = {};
+
+function ensureAudio() {
+  if (!audioCtx) {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    audioCtx = new Ctx();
+  }
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+
+function playAlarmBurst() {
+  const ctx = ensureAudio();
+  if (!ctx) return;
+
+  const now = ctx.currentTime;
+  [880, 1175, 880, 1175].forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "square";
+    osc.frequency.value = freq;
+    gain.gain.value = 0.0001;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    const start = now + i * 0.18;
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(0.22, start + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.16);
+    osc.start(start);
+    osc.stop(start + 0.17);
+  });
+}
+
+function startSiren() {
+  stopSiren();
+  playAlarmBurst();
+  sirenTimer = setInterval(playAlarmBurst, 900);
+}
+
+function stopSiren() {
+  if (sirenTimer) {
+    clearInterval(sirenTimer);
+    sirenTimer = null;
+  }
+}
+
+function isStolen(epc) {
+  return statusByEpc[epc] === "stolen";
+}
+
+function triggerStolenAlert(epc, { force = false } = {}) {
+  if (!isStolen(epc)) return;
+
+  const now = Date.now();
+  if (!force && lastAlertAtByEpc[epc] && now - lastAlertAtByEpc[epc] < ALERT_COOLDOWN_MS) {
+    return;
+  }
+  lastAlertAtByEpc[epc] = now;
+
+  els.stolenAlertName.textContent = displayName(epc);
+  els.stolenAlertEpc.textContent = epc;
+  els.stolenAlert.hidden = false;
+  document.body.classList.add("alert-stolen");
+  startSiren();
+}
+
+function dismissStolenAlert() {
+  els.stolenAlert.hidden = true;
+  document.body.classList.remove("alert-stolen");
+  stopSiren();
+}
 
 function setLive(state, text) {
   els.liveStatus.classList.remove("online", "error", "idle");
@@ -114,7 +195,8 @@ function updateStats() {
   }
 
   els.lastRssi.textContent = formatRssi(latest.rssi);
-  els.latestEpc.textContent = `${displayName(latest.epc)} · ${latest.epc}`;
+  const stolenMark = isStolen(latest.epc) ? " · مسروق" : "";
+  els.latestEpc.textContent = `${displayName(latest.epc)} · ${latest.epc}${stolenMark}`;
   els.latestMeta.textContent = formatTime(latest.created_at);
   noteDeviceActivity(latest.created_at);
 }
@@ -138,13 +220,23 @@ function renderTags() {
   els.tagsBody.innerHTML = rows
     .map((row) => {
       const name = displayName(row.epc);
+      const stolen = isStolen(row.epc);
+      const rowClass = stolen ? "stolen-row" : "";
+      const badge = stolen ? '<span class="stolen-badge">مسروق</span>' : "";
+      const stolenBtn = stolen
+        ? `<button type="button" class="ghost-btn small-btn" data-action="unmark-stolen" data-epc="${escapeHtml(row.epc)}">إلغاء المسروق</button>`
+        : `<button type="button" class="danger-btn small-btn" data-action="mark-stolen" data-epc="${escapeHtml(row.epc)}">تعيين مسروق</button>`;
+
       return `
-        <tr data-epc="${escapeHtml(row.epc)}">
-          <td><strong>${escapeHtml(name)}</strong></td>
+        <tr class="${rowClass}" data-epc="${escapeHtml(row.epc)}">
+          <td><strong>${escapeHtml(name)}</strong> ${badge}</td>
           <td class="epc-cell">${escapeHtml(row.epc)}</td>
           <td class="rssi-green mono">${escapeHtml(formatRssi(row.rssi))}</td>
           <td>
-            <button type="button" class="ghost-btn small-btn" data-action="rename" data-epc="${escapeHtml(row.epc)}">تعديل الاسم</button>
+            <div class="row-actions">
+              <button type="button" class="ghost-btn small-btn" data-action="rename" data-epc="${escapeHtml(row.epc)}">تعديل الاسم</button>
+              ${stolenBtn}
+            </div>
           </td>
         </tr>
       `;
@@ -163,10 +255,18 @@ function renderTable(highlightId) {
 
   els.readsBody.innerHTML = reads
     .map((row) => {
-      const cls = row.id === highlightId ? "new-row" : "";
+      const stolen = isStolen(row.epc);
+      const cls = [
+        row.id === highlightId ? "new-row" : "",
+        stolen ? "stolen-row" : "",
+      ]
+        .filter(Boolean)
+        .join(" ");
+      const badge = stolen ? '<span class="stolen-badge">مسروق</span>' : "";
+
       return `
         <tr class="${cls}" data-id="${row.id}">
-          <td>${escapeHtml(displayName(row.epc))}</td>
+          <td>${escapeHtml(displayName(row.epc))} ${badge}</td>
           <td class="epc-cell">${escapeHtml(row.epc)}</td>
           <td class="rssi-green mono">${escapeHtml(formatRssi(row.rssi))}</td>
           <td class="time-en">${formatTime(row.created_at)}</td>
@@ -185,7 +285,7 @@ function renderTable(highlightId) {
   updateStats();
 }
 
-function upsertRead(row, { prepend = false, highlight = false } = {}) {
+function upsertRead(row, { prepend = false, highlight = false, alertIfStolen = false } = {}) {
   const idx = reads.findIndex((r) => r.id === row.id);
   if (idx !== -1) {
     reads[idx] = row;
@@ -199,12 +299,14 @@ function upsertRead(row, { prepend = false, highlight = false } = {}) {
   if (reads.length > 200) reads = reads.slice(0, 200);
   noteDeviceActivity(row.created_at);
   renderTable(highlight ? row.id : null);
+
+  if (alertIfStolen) triggerStolenAlert(row.epc);
 }
 
 async function loadNames() {
   const { data, error } = await supabaseClient
     .from("tags")
-    .select("epc,product_name");
+    .select("epc,product_name,status");
 
   if (error) {
     console.error(error);
@@ -212,8 +314,11 @@ async function loadNames() {
   }
 
   nameByEpc = {};
+  statusByEpc = {};
   for (const row of data || []) {
-    if (row.epc) nameByEpc[row.epc] = row.product_name || "";
+    if (!row.epc) continue;
+    nameByEpc[row.epc] = row.product_name || "";
+    statusByEpc[row.epc] = row.status || "active";
   }
 }
 
@@ -251,11 +356,12 @@ function openRenameDialog(epc) {
 }
 
 async function saveTagName(epc, productName) {
+  const status = statusByEpc[epc] || "active";
   const { error } = await supabaseClient.from("tags").upsert(
     {
       epc,
       product_name: productName,
-      status: "active",
+      status,
     },
     { onConflict: "epc" }
   );
@@ -269,6 +375,27 @@ async function saveTagName(epc, productName) {
   nameByEpc[epc] = productName;
   renderTable();
   return true;
+}
+
+async function setStolenStatus(epc, stolen) {
+  const status = stolen ? "stolen" : "active";
+  const { error } = await supabaseClient.from("tags").upsert(
+    {
+      epc,
+      product_name: nameByEpc[epc] || null,
+      status,
+    },
+    { onConflict: "epc" }
+  );
+
+  if (error) {
+    console.error(error);
+    alert("تعذر تحديث حالة التاق: " + error.message);
+    return;
+  }
+
+  statusByEpc[epc] = status;
+  renderTable();
 }
 
 async function deleteOneRead(id) {
@@ -299,6 +426,7 @@ async function clearAllReads() {
 
   reads = [];
   lastDeviceSeenAt = null;
+  dismissStolenAlert();
   renderTable();
   refreshDeviceStatus();
 }
@@ -310,7 +438,11 @@ function subscribeRealtime() {
       "postgres_changes",
       { event: "INSERT", schema: "public", table: "tag_reads" },
       (payload) => {
-        upsertRead(payload.new, { prepend: true, highlight: true });
+        upsertRead(payload.new, {
+          prepend: true,
+          highlight: true,
+          alertIfStolen: true,
+        });
       }
     )
     .on(
@@ -331,8 +463,10 @@ function subscribeRealtime() {
         if (!row?.epc) return;
         if (payload.eventType === "DELETE") {
           delete nameByEpc[row.epc];
+          delete statusByEpc[row.epc];
         } else {
           nameByEpc[row.epc] = row.product_name || "";
+          statusByEpc[row.epc] = row.status || "active";
         }
         renderTable();
       }
@@ -353,6 +487,7 @@ function subscribeRealtime() {
 
 els.refreshBtn.addEventListener("click", refreshAll);
 els.clearAllBtn.addEventListener("click", clearAllReads);
+els.dismissStolenBtn.addEventListener("click", dismissStolenAlert);
 
 els.cancelNameBtn.addEventListener("click", () => {
   els.nameDialog.close();
@@ -372,6 +507,7 @@ els.nameForm.addEventListener("submit", async (event) => {
 });
 
 document.addEventListener("click", (event) => {
+  ensureAudio();
   const btn = event.target.closest("button[data-action]");
   if (!btn) return;
 
@@ -382,6 +518,13 @@ document.addEventListener("click", (event) => {
     const id = Number(btn.dataset.id);
     if (!Number.isFinite(id)) return;
     if (confirm("حذف هذه القراءة من القاعدة؟")) deleteOneRead(id);
+  } else if (action === "mark-stolen") {
+    if (confirm("تعيين هذا التاق كمسروق؟ سيظهر إنذار عند قراءته.")) {
+      setStolenStatus(btn.dataset.epc, true);
+    }
+  } else if (action === "unmark-stolen") {
+    setStolenStatus(btn.dataset.epc, false);
+    dismissStolenAlert();
   }
 });
 
