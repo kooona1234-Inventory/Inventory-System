@@ -39,51 +39,50 @@ let editingEpc = null;
 let lastDeviceSeenAt = null;
 let realtimeReady = false;
 let audioCtx = null;
-let sirenTimer = null;
+let alarmAudio = null;
 let lastAlertAtByEpc = {};
 
 function ensureAudio() {
   if (!audioCtx) {
     const Ctx = window.AudioContext || window.webkitAudioContext;
-    if (!Ctx) return null;
-    audioCtx = new Ctx();
+    if (Ctx) {
+      audioCtx = new Ctx();
+    }
   }
-  if (audioCtx.state === "suspended") audioCtx.resume();
-  return audioCtx;
-}
+  if (audioCtx && audioCtx.state === "suspended") {
+    audioCtx.resume();
+  }
 
-function playAlarmBurst() {
-  const ctx = ensureAudio();
-  if (!ctx) return;
-
-  const now = ctx.currentTime;
-  [880, 1175, 880, 1175].forEach((freq, i) => {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = "square";
-    osc.frequency.value = freq;
-    gain.gain.value = 0.0001;
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    const start = now + i * 0.18;
-    gain.gain.setValueAtTime(0.0001, start);
-    gain.gain.exponentialRampToValueAtTime(0.22, start + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.16);
-    osc.start(start);
-    osc.stop(start + 0.17);
-  });
+  if (!alarmAudio) {
+    alarmAudio = new Audio("alarm.wav?v=7");
+    alarmAudio.loop = true;
+    alarmAudio.preload = "auto";
+    alarmAudio.volume = 0.9;
+  }
+  return alarmAudio;
 }
 
 function startSiren() {
-  stopSiren();
-  playAlarmBurst();
-  sirenTimer = setInterval(playAlarmBurst, 900);
+  const audio = ensureAudio();
+  if (!audio) return;
+  try {
+    audio.currentTime = 0;
+    const playPromise = audio.play();
+    if (playPromise && typeof playPromise.catch === "function") {
+      playPromise.catch((err) => console.warn("alarm play blocked", err));
+    }
+  } catch (err) {
+    console.warn("alarm play failed", err);
+  }
 }
 
 function stopSiren() {
-  if (sirenTimer) {
-    clearInterval(sirenTimer);
-    sirenTimer = null;
+  if (!alarmAudio) return;
+  try {
+    alarmAudio.pause();
+    alarmAudio.currentTime = 0;
+  } catch (_) {
+    /* ignore */
   }
 }
 
