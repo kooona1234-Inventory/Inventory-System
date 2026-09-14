@@ -3,19 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Inventory System</title>
+  <title>Athar Live · Inventory</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=Readex+Pro:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <link rel="stylesheet" href="styles.css?v=9" />
+  <link rel="stylesheet" href="styles.css?v=10" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <div class="bg" aria-hidden="true"></div>
+  <div class="scanline" aria-hidden="true"></div>
 
   <div id="stolenAlert" class="stolen-alert" hidden>
     <div class="stolen-alert-inner">
+      <p class="stolen-alert-kicker">SECURITY ALERT</p>
       <p class="stolen-alert-title">إنذار سرقة</p>
       <p class="stolen-alert-name" id="stolenAlertName"></p>
       <p class="stolen-alert-epc mono" id="stolenAlertEpc"></p>
@@ -23,103 +25,128 @@
     </div>
   </div>
 
-  <header class="top">
-    <div class="brand">
-      <span class="brand-mark" aria-hidden="true"></span>
-      <div>
-        <p class="brand-name">Inventory System</p>
-      </div>
-    </div>
-    <div class="live" id="liveStatus">
-      <span class="live-dot"></span>
-      <span id="liveText">جارٍ الاتصال...</span>
-    </div>
-  </header>
-
-  <main>
-    <section class="hero">
-      <h1>المخزون الحي</h1>
-    </section>
-
-    <section class="metrics" aria-label="إحصائيات">
-      <div class="metric">
-        <p class="metric-label">إجمالي القراءات</p>
-        <p class="metric-value" id="totalReads">0</p>
-      </div>
-      <div class="metric">
-        <p class="metric-label">تاقات فريدة</p>
-        <p class="metric-value" id="uniqueTags">0</p>
-      </div>
-      <div class="metric">
-        <p class="metric-label">آخر قوة إشارة</p>
-        <p class="metric-value mono rssi-green" id="lastRssi">—</p>
-      </div>
-    </section>
-
-    <section class="latest" aria-label="آخر قراءة">
-      <p class="section-label">آخر تاق وصل</p>
-      <p class="latest-epc mono" id="latestEpc">بانتظار أول قراءة...</p>
-      <p class="latest-meta" id="latestMeta"></p>
-    </section>
-
-    <section class="feed" aria-label="التاقات المسماة">
-      <div class="feed-head">
-        <h2>التاقات والأسماء</h2>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>الاسم</th>
-              <th>EPC</th>
-              <th>القوة</th>
-              <th>إجراء</th>
-            </tr>
-          </thead>
-          <tbody id="tagsBody">
-            <tr class="empty-row">
-              <td colspan="4">لا توجد تاقات بعد</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="feed" aria-label="سجل القراءات">
-      <div class="feed-head">
-        <h2>سجل القراءات</h2>
-        <div class="feed-actions">
-          <button type="button" class="ghost-btn" id="refreshBtn">تحديث يدوي</button>
-          <button type="button" class="danger-btn" id="clearAllBtn">حذف كل القراءات</button>
+  <div class="shell">
+    <header class="top">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <div class="brand-copy">
+          <p class="brand-name">Athar Live</p>
+          <p class="brand-sub">نظام المخزون الحي · RFID Portal</p>
         </div>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>الاسم</th>
-              <th>EPC</th>
-              <th>القوة</th>
-              <th>الوقت</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="readsBody">
-            <tr class="empty-row">
-              <td colspan="5">لا توجد قراءات بعد</td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="top-meta">
+        <div class="live" id="liveStatus">
+          <span class="live-dot"></span>
+          <span id="liveText">جارٍ الاتصال...</span>
+        </div>
       </div>
-    </section>
-  </main>
+    </header>
+
+    <main>
+      <section class="hero">
+        <p class="hero-kicker">LIVE GATEWAY</p>
+        <h1>المخزون الحي</h1>
+        <p class="lede">مراقبة فورية لمرور التاقات عبر البوابة — قراءة، تسمية، وإنذار.</p>
+      </section>
+
+      <section class="metrics" aria-label="إحصائيات">
+        <div class="metric">
+          <p class="metric-label">إجمالي القراءات</p>
+          <p class="metric-value" id="totalReads">0</p>
+        </div>
+        <div class="metric">
+          <p class="metric-label">تاقات فريدة</p>
+          <p class="metric-value" id="uniqueTags">0</p>
+        </div>
+        <div class="metric metric-signal">
+          <p class="metric-label">آخر قوة إشارة</p>
+          <p class="metric-value mono rssi-green" id="lastRssi">—</p>
+        </div>
+      </section>
+
+      <section class="latest" aria-label="آخر قراءة">
+        <div class="latest-head">
+          <p class="section-label">آخر تاق وصل</p>
+          <span class="latest-badge">REALTIME</span>
+        </div>
+        <p class="latest-epc mono" id="latestEpc">بانتظار أول قراءة...</p>
+        <p class="latest-meta" id="latestMeta"></p>
+      </section>
+
+      <div class="panels">
+        <section class="feed" aria-label="التاقات المسماة">
+          <div class="feed-head">
+            <div>
+              <p class="section-label">REGISTRY</p>
+              <h2>التاقات والأسماء</h2>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>الاسم</th>
+                  <th>EPC</th>
+                  <th>القوة</th>
+                  <th>إجراء</th>
+                </tr>
+              </thead>
+              <tbody id="tagsBody">
+                <tr class="empty-row">
+                  <td colspan="4">لا توجد تاقات بعد</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="feed" aria-label="سجل القراءات">
+          <div class="feed-head">
+            <div>
+              <p class="section-label">EVENT LOG</p>
+              <h2>سجل القراءات</h2>
+            </div>
+            <div class="feed-actions">
+              <button type="button" class="ghost-btn" id="refreshBtn">تحديث</button>
+              <button type="button" class="danger-btn" id="clearAllBtn">حذف الكل</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>الاسم</th>
+                  <th>EPC</th>
+                  <th>القوة</th>
+                  <th>الوقت</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="readsBody">
+                <tr class="empty-row">
+                  <td colspan="5">لا توجد قراءات بعد</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer>
+      <span>Athar Live Inventory</span>
+      <span class="footer-sep">·</span>
+      <span>UHF RFID · Supabase Realtime</span>
+    </footer>
+  </div>
 
   <dialog id="nameDialog" class="dialog">
     <form method="dialog" id="nameForm">
+      <p class="section-label">TAG LABEL</p>
       <h3>تسمية التاق</h3>
       <p class="dialog-epc mono" id="dialogEpc"></p>
-      <label for="nameInput">الاسم (مثال: عطر شعر)</label>
-      <input id="nameInput" type="text" maxlength="80" placeholder="عطر عود / جهاز / ..." required />
+      <label for="nameInput">الاسم</label>
+      <input id="nameInput" type="text" maxlength="80" placeholder="مثال: عطر عود / جهاز" required />
       <div class="dialog-actions">
         <button type="submit" class="primary-btn" value="save">حفظ</button>
         <button type="button" class="ghost-btn" id="cancelNameBtn">إلغاء</button>
@@ -127,6 +154,6 @@
     </form>
   </dialog>
 
-  <script src="app.js?v=9"></script>
+  <script src="app.js?v=10"></script>
 </body>
 </html>
