@@ -4,8 +4,14 @@ const SUPABASE_ANON_KEY =
 
 const DEVICE_ACTIVE_MS = 45000;
 const ALERT_COOLDOWN_MS = 8000;
+const FAST_POLL_MS = 700;
+const BLOCKED_EPCS = new Set(["30361443F83C2C1EBBD02D54"]);
 
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  realtime: {
+    params: { eventsPerSecond: 40 },
+  },
+});
 
 const els = {
   liveStatus: document.getElementById("liveStatus"),
@@ -285,16 +291,21 @@ function renderTable(highlightId) {
 }
 
 function upsertRead(row, { prepend = false, highlight = false, alertIfStolen = false } = {}) {
+  if (!row?.epc || BLOCKED_EPCS.has(String(row.epc).toUpperCase())) return;
+
   const idx = reads.findIndex((r) => r.id === row.id);
   if (idx !== -1) {
     reads[idx] = row;
   } else if (prepend) {
     reads.unshift(row);
   } else {
-    reads.push(row);
+    // إدراج مرتب سريع بدون sort كامل
+    const t = new Date(row.created_at).getTime();
+    let insertAt = reads.findIndex((r) => new Date(r.created_at).getTime() < t);
+    if (insertAt === -1) reads.push(row);
+    else reads.splice(insertAt, 0, row);
   }
 
-  reads.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   if (reads.length > 200) reads = reads.slice(0, 200);
   noteDeviceActivity(row.created_at);
   renderTable(highlight ? row.id : null);
@@ -527,7 +538,32 @@ document.addEventListener("click", (event) => {
   }
 });
 
-setInterval(refreshDeviceStatus, 5000);
+setInterval(refreshDeviceStatus, 2000);
+
+// سحب سريع احتياطي لو الـ realtime تأخّر
+let pollBusy = false;
+async function fastPoll() {
+  if (pollBusy || document.hidden) return;
+  pollBusy = true;
+  try {
+    const { data, error } = await supabaseClient
+      .from("tag_reads")
+      .select("id,epc,rssi,device_id,created_at")
+      .order("created_at", { ascending: false })
+      .limit(25);
+    if (error || !data) return;
+    for (let i = data.length - 1; i >= 0; i--) {
+      const row = data[i];
+      if (reads.some((r) => r.id === row.id)) continue;
+      upsertRead(row, { prepend: true, highlight: true, alertIfStolen: true });
+    }
+  } finally {
+    pollBusy = false;
+  }
+}
+
+setInterval(fastPoll, FAST_POLL_MS);
 
 refreshAll();
 subscribeRealtime();
+fastPoll();
